@@ -21,6 +21,11 @@ const keys = require('./config/keys.js');
  */
 const app = express();
 
+const bodyParser = require('body-parser');
+
+//parse application/x-www-form-urlencoded
+app.use(bodyParser.urlencoded({ extended: false }));
+
 /**
  * mongoose 모듈을 가져와서 mongoose라는 상수에 할당합니다.
  * mongoose는 MongoDB와 Node.js 애플리케이션을 
