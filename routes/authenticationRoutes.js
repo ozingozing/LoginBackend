@@ -3,8 +3,9 @@ const Account = mongoose.model('accounts'); // 'accounts' 모델을 불러옵니
 
 const argon2 = require('argon2');
 const crypto = require("crypto");
-const { debug } = require('console');
-
+//비밀번호 유효성검사용 regex
+const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,24}$/;
+ 
 module.exports = app => {
     // 라우터 설정
     app.post('/account/login', async (req, res) => {
@@ -14,8 +15,8 @@ module.exports = app => {
         // req에서 username과 password를 가져옵니다.
         const { rUsername, rPassword } = req.body;
 
-        // username이나 password가 없으면 "Invalid credentials" 메시지를 반환합니다.
-        if (rUsername == null || rPassword == null) {
+        // username이 없거나 regex test를 통과 못하면 1번 에러 띄우고 리턴
+        if (rUsername == null || !passwordRegex.test(rPassword)) {
             response.code = 1;
             response.msg = "Invalid credentials";
             res.send(response);
@@ -71,9 +72,19 @@ module.exports = app => {
         const { rUsername, rPassword } = req.body;
 
         // username이나 password가 없으면 "Invalid credentials" 메시지를 반환합니다.
-        if (rUsername == null || rPassword == null) {
+        if (rUsername == null 
+            || rUsername.length < 3 
+            || rUsername.length > 24) {
             response.code = 1;
             response.msg = "Invalid credentials";
+            res.send(response);
+            return;
+        }
+
+        if(!passwordRegex.test(rPassword))
+        {
+            response.code = 3;
+            response.msg = "Unsafe password";
             res.send(response);
             return;
         }
