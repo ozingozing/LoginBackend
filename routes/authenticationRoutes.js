@@ -3,6 +3,7 @@ const Account = mongoose.model('accounts'); // 'accounts' 모델을 불러옵니
 
 const argon2 = require('argon2');
 const crypto = require("crypto");
+const { debug } = require('console');
 
 module.exports = app => {
     // 라우터 설정
@@ -22,7 +23,9 @@ module.exports = app => {
         }
 
         // 데이터베이스에서 username이 rUsername인 계정을 찾습니다.
-        var userAccount = await Account.findOne({ username: rUsername });
+        var userAccount = await Account.findOne({ username: rUsername }, "username adminFlag password");
+        console.log(userAccount);
+        
         //계정이 있으면
         if (userAccount != null) {
             argon2.verify(userAccount.password, rPassword).then(async (success) => {
@@ -33,7 +36,7 @@ module.exports = app => {
 
                     response.code = 0;
                     response.msg = "Account found";
-                    response.data = userAccount;
+                    response.data = (({username, adminFlag}) => ({username, adminFlag}))(userAccount);
                     res.send(response);
 
                     return;
@@ -76,8 +79,8 @@ module.exports = app => {
         }
 
         // 데이터베이스에서 username이 rUsername인 계정을 찾습니다.
-        var userAccount = await Account.findOne({ username: rUsername });
-
+        var userAccount = await Account.findOne({ username: rUsername }, "_id");
+        
         // 계정이 존재하지 않으면 새 계정을 만듭니다.
         if (userAccount == null) {
             // 새로운 계정을 생성합니다.
@@ -109,7 +112,7 @@ module.exports = app => {
 
                 response.code = 0;
                 response.msg = "Account found";
-                response.data = userAccount;
+                response.data = (({username}) => ({username}))(newAccount);
                 res.send(response);
 
                 return;
