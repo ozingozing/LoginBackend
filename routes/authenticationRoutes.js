@@ -6,57 +6,84 @@ const crypto = require("crypto");
 
 module.exports = app => {
     // 라우터 설정
-    app.post('/account/login', async(req, res) => {
+    app.post('/account/login', async (req, res) => {
+
+        var response = {};
+
         // req에서 username과 password를 가져옵니다.
-        const {rUsername, rPassword} = req.body;
-        
+        const { rUsername, rPassword } = req.body;
+
         // username이나 password가 없으면 "Invalid credentials" 메시지를 반환합니다.
-        if(rUsername == null || rPassword == null) {
-            res.send("Invalid credentials");
+        if (rUsername == null || rPassword == null) {
+            response.code = 1;
+            response.msg = "Invalid credentials";
+            res.send(response);
             return;
         }
 
         // 데이터베이스에서 username이 rUsername인 계정을 찾습니다.
-        var userAccount = await Account.findOne({username: rUsername});
+        var userAccount = await Account.findOne({ username: rUsername });
         //계정이 있으면
-        if(userAccount != null) {
+        if (userAccount != null) {
             argon2.verify(userAccount.password, rPassword).then(async (success) => {
-                if(success) {
+                if (success) {
+                    console.log("Sucess Login!");
                     userAccount.lastAuthentication = Date.now();
                     await userAccount.save();
-                    res.send(userAccount);
+
+                    response.code = 0;
+                    response.msg = "Account found";
+                    response.data = userAccount;
+                    res.send(response);
+
                     return;
                 }
                 else {
                     // 비밀번호가 일치하지 않으면 "Invalid credentials" 메시지를 반환합니다.
-                    res.send("Invalid credentials");
+                    console.log("Login Failed!");
+                    response.code = 1;
+                    response.msg = "Invalid credentials";
+                    res.send(response);
                     return;
                 }
             });
+        }
+        else {
+            // 비밀번호가 일치하지 않으면 "Invalid credentials" 메시지를 반환합니다.
+            console.log("Login Failed!");
+            response.code = 1;
+            response.msg = "Invalid credentials";
+            res.send(response);
+            return;
         }
     });
 
 
     // 라우터 설정
-    app.post('/account/create', async(req, res) => {
+    app.post('/account/create', async (req, res) => {
+
+        var response = {};
+
         // req에서 username과 password를 가져옵니다.
-        const {rUsername, rPassword} = req.body;
-        
+        const { rUsername, rPassword } = req.body;
+
         // username이나 password가 없으면 "Invalid credentials" 메시지를 반환합니다.
-        if(rUsername == null || rPassword == null) {
-            res.send("Invalid credentials");
+        if (rUsername == null || rPassword == null) {
+            response.code = 1;
+            response.msg = "Invalid credentials";
+            res.send(response);
             return;
         }
 
         // 데이터베이스에서 username이 rUsername인 계정을 찾습니다.
-        var userAccount = await Account.findOne({username: rUsername});
-        
+        var userAccount = await Account.findOne({ username: rUsername });
+
         // 계정이 존재하지 않으면 새 계정을 만듭니다.
-        if(userAccount == null) {
+        if (userAccount == null) {
             // 새로운 계정을 생성합니다.
             console.log("Create new account...");
 
-            try{
+            try {
                 // 비동기 함수 내에서 사용되므로 await 사용
                 const salt = await new Promise((resolve, reject) => {
                     // crypto 모듈의 randomBytes 함수를 사용하여 32바이트의 랜덤 바이트 배열을 생성
@@ -80,21 +107,22 @@ module.exports = app => {
                 // 새로운 계정을 MongoDB 데이터베이스에 저장
                 await newAccount.save();
 
-                /**
-                 * res.send(newAccount)는 
-                 * Express.js 프레임워크에서 사용되는 코드로, 
-                 * 생성된 새로운 계정 객체(newAccount)를 HTTP 응답(response)으로 클라이언트에 전송
-                 */
-                res.send(newAccount);
+                response.code = 0;
+                response.msg = "Account found";
+                response.data = userAccount;
+                res.send(response);
+
                 return;
-            } catch(err) {
+            } catch (err) {
                 console.log("ERROR Creating account and hashedPassword");
             }
-            
+
         } else {
-            res.send("Username is already taken");
+            response.code = 2;
+            response.msg = "Username is already taken";
+            res.send(response);
         }
-        
+
         return;
     });
 }
