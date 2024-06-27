@@ -42,6 +42,7 @@ const mongoose = require('mongoose');
  */
 //Setting up DB
 mongoose.connect(keys.mongoURI);
+console.log(keys.mongoURI);
 
 //Setup database models
 require('./model/Account.js');
